@@ -1,0 +1,56 @@
+### WHZ LoopRoom 🎧
+WHZ LoopRoom is a web app that turns any song into clean background music (BGM) directly in the browser.
+
+You upload a track, tweak a few controls, and get a remixed BGM version you can download.
+
+### Live Demo
+👉 https://whz-looproom.streamlit.app/
+
+### What the App Does
+Upload a song (.mp3 / .wav)
+
+Change speed and pitch
+
+Add bass, highs, reverb, and lofi
+
+Automatically split the song into Intro, Drop, and Outro and remix it
+
+Preview a slice, then export the final BGM as a .wav
+
+#### How the AI Agent Was Used
+This project was built in an agentic way:
+
+I asked an AI coding agent to build a BGM remix tool in Streamlit
+
+The agent wrote most of the core logic:
+
+Audio effects: bass, highs, reverb, lofi
+
+Speed and pitch controls
+
+Section splitting (Intro / Drop / Outro)
+
+Export pipeline for the final BGM file
+
+### I mainly:
+
+Defined the idea and feature set
+
+Guided the agent with prompts and iterations
+
+Cleaned up small issues and deployed to Streamlit Community Cloud
+
+In practice, the AI agent generated the majority of the remix logic, and I focused on steering, wiring, and deployment.
+
+### Tech Stack
+Python
+
+Streamlit (UI + hosting)
+
+Basic audio processing / DSP concepts
+#### whz-looproom/
+├── app.py                # Streamlit app (UI + wiring)
+├── requirements.txt      # Python dependencies
+└── bgm_core/
+    ├── __init__.py
+    └── remix.py          # remix_audio(...) implementation
