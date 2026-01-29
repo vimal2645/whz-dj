@@ -2,7 +2,6 @@ import librosa
 import numpy as np
 from scipy.signal import butter, lfilter, fftconvolve
 
-
 # ---------- Basic DSP helpers ----------
 
 def _fade_in_out(y, sr, fade_seconds=1.0):
@@ -20,20 +19,54 @@ def _fade_in_out(y, sr, fade_seconds=1.0):
     return y * env
 
 
+# --- helper to smooth reverb tail (remove harsh hiss) ---
+
+def _smooth_tail(tail, sr, cutoff=6000):
+    """
+    Light low-pass filter on the artificial reverb tail to reduce
+    high-frequency 'radio noise' feeling.
+    """
+    nyq = 0.5 * sr
+    norm_cut = cutoff / nyq
+    b, a = butter(2, norm_cut, btype="low", analog=False)
+    return lfilter(b, a, tail)
+
+
 def _reverb(y, sr, amount=0.0):
+    """
+    Simple lush reverb:
+    - noise-based tail shaped with exponential decay
+    - tail is low-passed for smoother, less 'broken' sound
+    - 'amount' is wet/dry mix 0-1
+    """
     if amount <= 0.0:
         return y
-    tail_seconds = 0.5
+
+    # 1.5–3.0s tail depending on amount
+    tail_seconds = 1.5 + 1.5 * amount
     tail_len = int(tail_seconds * sr)
     if tail_len <= 0:
         return y
 
-    tail = np.random.randn(tail_len) * np.exp(-np.linspace(0, 3, tail_len))
+    t = np.linspace(0, 1, tail_len)
+    decay_curve = np.exp(-3.5 * t)
+    tail = np.random.randn(tail_len) * decay_curve
+
+    # soften highs of the tail to avoid harsh hiss
+    tail = _smooth_tail(tail, sr, cutoff=6000)
+
     wet = fftconvolve(y, tail, mode="full")[:len(y)]
     wet = wet / (np.max(np.abs(wet)) + 1e-6)
-    out = (1 - amount) * y + amount * wet
-    return out
 
+    # more wet mix for higher amount
+    wet_mix = 0.2 + 0.6 * amount  # 0.2–0.8
+    dry_mix = 1.0 - wet_mix
+
+    out = dry_mix * y + wet_mix * wet
+
+    peak = np.max(np.abs(out)) + 1e-6
+    out = out / peak * 0.98
+    return out
 
 # ---------- Simple bass / highs / lofi ----------
 
@@ -87,7 +120,7 @@ def _lofi_filter(y, sr, amount=0.0):
     if amount <= 0.0:
         return y
 
-    def lowpass(data, cutoff=3000, order=4):
+    def lowpass(data, cutoff=2500, order=4):
         nyq = 0.5 * sr
         normal_cutoff = cutoff / nyq
         b, a = butter(order, normal_cutoff, btype="low", analog=False)
@@ -103,7 +136,6 @@ def _lofi_filter(y, sr, amount=0.0):
 def _reverse_audio(y):
     return y[::-1]
 
-
 # ---------- Section processor ----------
 
 def _process_section(y, sr, bass_amount, high_amount, reverb_amount, lofi_amount):
@@ -115,7 +147,6 @@ def _process_section(y, sr, bass_amount, high_amount, reverb_amount, lofi_amount
     y = _high_boost(y, sr, amount=high_amount)
     y = _lofi_filter(y, sr, amount=lofi_amount)
     return y
-
 
 # ---------- Main remix with 3 sections + optional segment ----------
 
@@ -171,9 +202,13 @@ def remix_audio(
         i_end = int((start_time + duration) * sr)
         y = y[i_start:i_end]
 
+    # Clamp to musical ranges to keep quality
+    speed = float(np.clip(speed, 0.6, 1.3))       # avoid extreme time-stretch artifacts [web:498]
+    pitch_steps = int(np.clip(pitch_steps, -7, 7))
+
     # Global speed & pitch
     if speed != 1.0:
-        y = librosa.effects.time_stretch(y, rate=speed)
+        y = librosa.effects.time_stretch(y, rate=speed)  # [web:493]
     if pitch_steps != 0:
         y = librosa.effects.pitch_shift(y, sr=sr, n_steps=pitch_steps)
 
@@ -220,15 +255,52 @@ def remix_audio(
     y_out = y_out / max_val * 0.98
     return y_out, sr
 
-
-# ---------- Optional: simple presets ----------
+# ---------- Presets ----------
 
 def get_preset_params(preset_name: str):
-    params = {"speed": 1.0, "pitch": 0}
-    if preset_name == "Lo-Fi Slow":
-        params.update({"speed": 0.8, "pitch": -2})
+    """
+    Returns a dict with at least:
+    - speed
+    - pitch
+    and optional suggested section params.
+    """
+    params = {
+        "speed": 1.0,
+        "pitch": 0,
+        "bass1": 0.2, "high1": 0.2, "reverb1": 0.2, "lofi1": 0.0,
+        "bass2": 0.7, "high2": 0.4, "reverb2": 0.3, "lofi2": 0.1,
+        "bass3": 0.35, "high3": 0.2, "reverb3": 0.4, "lofi3": 0.4,
+    }
+
+    if preset_name == "Slowed Reverb":
+        params["speed"] = 0.82
+        params["pitch"] = -3
+
+        params["bass1"] = 0.25
+        params["high1"] = 0.15
+        params["reverb1"] = 0.6
+        params["lofi1"] = 0.3
+
+        params["bass2"] = 0.7
+        params["high2"] = 0.25
+        params["reverb2"] = 0.8
+        params["lofi2"] = 0.4
+
+        params["bass3"] = 0.3
+        params["high3"] = 0.15
+        params["reverb3"] = 0.9
+        params["lofi3"] = 0.5
+
+    elif preset_name == "Lo-Fi Slow":
+        params["speed"] = 0.8
+        params["pitch"] = -2
+
     elif preset_name == "Nightcore":
-        params.update({"speed": 1.3, "pitch": 3})
+        params["speed"] = 1.3
+        params["pitch"] = 3
+
     elif preset_name == "Podcast Clean":
-        params.update({"speed": 1.0, "pitch": 0})
+        params["speed"] = 1.0
+        params["pitch"] = 0
+
     return params
