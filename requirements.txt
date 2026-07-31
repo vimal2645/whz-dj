@@ -1,4 +1,6 @@
-streamlit
+streamlit==1.32.0
+numpy
 librosa
 soundfile
-numpy
+scipy
+matplotlib
