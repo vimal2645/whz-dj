@@ -6,51 +6,101 @@ You upload a track, tweak a few controls, and get a remixed BGM version you can 
 ### Live Demo
 👉 https://whz-looproom.streamlit.app/
 
-### What the App Does
-Upload a song (.mp3 / .wav)
+# 🎧 Automated Lofi & Slowed + Reverb Audio Generator
 
-Change speed and pitch
+A production-ready Python application and REST API that automatically transforms standard audio tracks into atmospheric **Slowed + Reverb** and **Lofi** remixes in seconds. 
 
-Add bass, highs, reverb, and lofi
+Built using **FastAPI**, **Streamlit**, and **Librosa**—no manual editing in DAWs like FL Studio or Audacity required.
 
-Automatically split the song into Intro, Drop, and Outro and remix it
+---
 
-Preview a slice, then export the final BGM as a .wav
+## 📋 Prerequisites
 
-#### How the AI Agent Was Used
-This project was built in an agentic way:
+Before running the app, ensure you have the following two dependencies installed on your system:
 
-I asked an AI coding agent to build a BGM remix tool in Streamlit
+### 1. Python 3.10 or Higher
+* Download Python from [python.org/downloads](https://www.python.org/downloads/).
+* ⚠️ **IMPORTANT (Windows Users):** During installation, make sure to check the box that says **"Add Python to PATH"** at the bottom of the installer window.
 
-The agent wrote most of the core logic:
+### 2. FFmpeg (Required for Audio Exporting)
+FFmpeg processes and encodes `.mp3` and `.wav` audio files.
 
-Audio effects: bass, highs, reverb, lofi
+* **Windows:**
+  1. Download the release build from [gyan.dev/ffmpeg/builds/](https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip).
+  2. Extract the folder and move it to `C:\ffmpeg`.
+  3. Search for **Environment Variables** in Windows Search -> Edit System Variables -> Click **Path** -> Click **Edit** -> Add `C:\ffmpeg\bin`.
+* **macOS:** Install via Homebrew: `brew install ffmpeg`
+* **Linux (Ubuntu/Debian):** Install via APT: `sudo apt update && sudo apt install ffmpeg`
 
-Speed and pitch controls
+---
 
-Section splitting (Intro / Drop / Outro)
+## 🚀 How to Run the App
 
-Export pipeline for the final BGM file
+Choose the method that works best for your operating system and technical background:
 
-### I mainly:
+### Method 1: One-Click Quick Launch (Windows Only) ⚡
+*Best for non-technical users, content creators, and quick playback.*
 
-Defined the idea and feature set
+1. Download or clone this repository to your computer.
+2. Double-click the **`start.bat`** file located in the root directory.
+3. The script will automatically check Python, install required libraries (`pip install -r requirements.txt`), start the FastAPI backend, and launch the Streamlit Web UI in your default browser.
 
-Guided the agent with prompts and iterations
+---
 
-Cleaned up small issues and deployed to Streamlit Community Cloud
+### Method 2: Manual Terminal Setup (Mac, Linux & Windows Fallback) 🛠️
+*Best for developers, troubleshooting, or non-Windows operating systems.*
 
-In practice, the AI agent generated the majority of the remix logic, and I focused on steering, wiring, and deployment.
+#### Step 1: Clone or Download the Project
+```bash
+git clone [https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git](https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git)
+cd YOUR_REPO_NAME
+Step 2: Set Up a Virtual Environment (Optional, but Recommended)
+Bash
+# Windows
+python -m venv venv
+venv\Scripts\activate
 
-### Tech Stack
-Python
+# macOS / Linux
+python3 -m venv venv
+source venv/bin/activate
+Step 3: Install Required Libraries
+Bash
+pip install -r requirements.txt
+Step 4: Start the FastAPI Backend
+Open a terminal window and run:
 
-Streamlit (UI + hosting)
+Bash
+uvicorn main:app --reload --host 127.0.0.1 --port 8000
+The backend API will be running at http://127.0.0.1:8000. You can view interactive Swagger API docs at http://127.0.0.1:8000/docs.
 
-Basic audio processing / DSP concepts
-#### whz-looproom/
-├── app.py                # Streamlit app (UI + wiring)
-├── requirements.txt      # Python dependencies
-└── bgm_core/
-    ├── __init__.py
-    └── remix.py          # remix_audio(...) implementation
+Step 5: Start the Streamlit Web Interface
+Open a second terminal window (keep the first one running) and run:
+
+Bash
+streamlit run app.py
+Your browser will automatically open http://localhost:8501 where you can upload audio and test the sliders.
+
+🛠️ Project Structure
+Plaintext
+├── main.py              # FastAPI Backend API & DSP algorithms
+├── app.py               # Streamlit Interactive Frontend UI
+├── start.bat            # 1-Click Windows Auto-Launcher
+├── requirements.txt     # Python dependency list
+└── README.md            # Documentation & setup guide
+🔍 Troubleshooting & Common Issues
+'python' is not recognized as an internal or external command
+
+Fix: Python was installed without checking "Add Python to PATH". Uninstall Python and reinstall it, ensuring the PATH option is selected.
+
+FFmpeg not found or Audio Processing Fails
+
+Fix: FFmpeg is missing from your system environment variables. Follow the FFmpeg installation steps above and restart your terminal/PC.
+
+Streamlit fails to connect to the backend
+
+Fix: Ensure the FastAPI backend is running on port 8000 before launching app.py.
+
+📄 License & Usage
+Personal License: Permitted for personal content creation and non-commercial local use.
+
+Commercial License: Required for commercial software deployment, client work, or hosting as a paid service.
